@@ -10,80 +10,78 @@ import (
 )
 
 var (
-  red = 12
-  green = 13
-  blue = 14
+	maxRed   = 12
+	maxGreen = 13
+	maxBlue  = 14
 )
 
-type amout struct {
-  color string
-  amout int
+type colorAmount struct {
+	color string
+	amount int
 }
 
-func main () {
-  var total int
+func main() {
+	var validLineSum int
 
-  file, err := os.Open("input.txt")
-  if err != nil {
-    fmt.Printf("unable to read file")
-  }
-  defer file.Close()
- 
-  scanner := bufio.NewScanner(file)
+	file, err := os.Open("input.txt")
+	if err != nil {
+		fmt.Println("Unable to read file:", err)
+		return
+	}
+	defer file.Close()
 
-  for i := 1; scanner.Scan(); i++ {
-    text := formatString(scanner.Text())
-    out:
-     for x ,j := range text {
-      switch j.color {
-      case "red":
-        if j.amout > red {
-          break out
-        }
-      case "blue":
-        if j.amout > blue {
-          break out
-        }
-      case "green":
-        if j.amout > green {
-          break out
-        }
-      }
-      if x+1 == len(text) {
-        // fmt.Println(len(text))
-        // fmt.Println(x+1)
-        total = total + i
-      }
-    }
-  } 
-  fmt.Println(total)
+	scanner := bufio.NewScanner(file)
+
+	for lineNum := 1; scanner.Scan(); lineNum++ {
+		colorAmounts := parseLine(scanner.Text())
+
+		isValid := true
+		for _, entry := range colorAmounts {
+			switch entry.color {
+			case "red":
+				if entry.amount > maxRed {
+					isValid = false
+					break
+				}
+			case "blue":
+				if entry.amount > maxBlue {
+					isValid = false
+					break
+				}
+			case "green":
+				if entry.amount > maxGreen {
+					isValid = false
+					break
+				}
+			}
+		}
+
+		if isValid {
+			validLineSum += lineNum
+		}
+	}
+
+	fmt.Println(validLineSum)
+	Part2()
 }
 
-func formatString(text string) []amout {
-  var line []amout
+func parseLine(text string) []colorAmount {
+	var result []colorAmount
+
 	colonIndex := strings.Index(text, ":")
-   if colonIndex != -1 {
+	if colonIndex != -1 {
 		text = text[colonIndex+1:]
 	}
 
-  re := regexp.MustCompile(`(\d+)\s([a-zA-Z]+)`)
+	re := regexp.MustCompile(`(\d+)\s([a-zA-Z]+)`)
+	matches := re.FindAllStringSubmatch(text, -1)
 
-	formatted := re.ReplaceAllString(text, `"$1","$2"`)
-
-	formatted = strings.ReplaceAll(formatted, ";", ",")
-	split := strings.Split(formatted, ",")
-
-	for i := range split {
-		split[i] = strings.TrimSpace(split[i])
+	for _, match := range matches {
+		amount, _ := strconv.Atoi(match[1])
+		color := match[2]
+		result = append(result, colorAmount{color: color, amount: amount})
 	}
 
-	for i := 0; i < len(split); i += 2 {
-    var amoutLine amout
-    v, _ := strconv.Atoi(strings.Trim(split[i], `"`))
-    amoutLine.amout = v
-    amoutLine.color = strings.Trim(split[i+1], `"`) 
-
-    line = append(line, amoutLine)
-	}
-  return line 
+	return result
 }
+
